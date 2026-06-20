@@ -85,7 +85,10 @@ Respond ONLY with minified JSON: {"title","blueprint","dimension","templateId","
       messages: [{ role: "user", content: prompt }],
     }),
   });
-  if (!res.ok) throw new Error("anthropic " + res.status);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`anthropic ${res.status}: ${body.slice(0, 160)}`);
+  }
   const data = await res.json();
   const text = data?.content?.[0]?.text || "{}";
   const json = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
@@ -109,17 +112,23 @@ export async function POST(req: Request) {
     const key = process.env.ANTHROPIC_API_KEY;
     let spec: Spec;
     let usedAI = false;
+    let aiError: string | undefined;
+    let keyPresent = !!key;
     if (key) {
       try {
         spec = await claudeParse(prompt, key);
         usedAI = true;
-      } catch {
+      } catch (err) {
+        aiError = err instanceof Error ? err.message : String(err);
+        console.error("[ai] claude call failed:", aiError);
         spec = localParse(prompt);
       }
     } else {
       spec = localParse(prompt);
     }
-    return NextResponse.json({ ...spec, usedAI });
+    // `debug` only surfaces a safe reason string (status + provider message), never the key.
+    const debug = req.headers.get("x-debug") === "1" ? { keyPresent, aiError } : undefined;
+    return NextResponse.json({ ...spec, usedAI, ...(debug ? { debug } : {}) });
   } catch (e) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }

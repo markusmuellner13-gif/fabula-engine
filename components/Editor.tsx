@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useEngine } from "@/lib/store";
 import GameCanvas from "./GameCanvas";
 import AIAssistant from "./AIAssistant";
+import AssetStudio from "./AssetStudio";
 import { buildGameHTML } from "@/lib/gameRuntime";
 import { GENRES } from "@/lib/genres";
 import { DESIGN_TEMPLATES } from "@/lib/templates";
@@ -12,7 +13,7 @@ export default function Editor() {
   const project = useEngine((s) => s.projects.find((p) => p.id === s.currentId));
   const updateProject = useEngine((s) => s.updateProject);
   const setView = useEngine((s) => s.setView);
-  const [tab, setTab] = useState<"assistant" | "design">("assistant");
+  const [tab, setTab] = useState<"assistant" | "assets" | "design">("assistant");
 
   if (!project) {
     return (
@@ -92,25 +93,23 @@ export default function Editor() {
         {/* right panel */}
         <aside className="flex w-[360px] shrink-0 flex-col border-l border-edge bg-panel/40">
           <div className="flex border-b border-edge">
-            {(["assistant", "design"] as const).map((t) => (
+            {(["assistant", "assets", "design"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-3 text-sm font-semibold capitalize transition ${
+                className={`flex-1 py-3 text-xs font-semibold capitalize transition ${
                   tab === t ? "bg-glow/15 text-white" : "text-white/50 hover:bg-white/5"
                 }`}
               >
-                {t === "assistant" ? "🤖 Assistant" : "🎨 Design"}
+                {t === "assistant" ? "🤖 Assistant" : t === "assets" ? "🎨 Assets" : "🎚 Design"}
               </button>
             ))}
           </div>
 
           <div className="min-h-0 flex-1">
-            {tab === "assistant" ? (
-              <AIAssistant project={project} />
-            ) : (
-              <DesignPanel projectId={project.id} currentTemplate={(project.config as any)?.templateId} />
-            )}
+            {tab === "assistant" && <AIAssistant project={project} />}
+            {tab === "assets" && <AssetStudio project={project} />}
+            {tab === "design" && <DesignPanel projectId={project.id} currentTemplate={(project.config as any)?.templateId} />}
           </div>
         </aside>
       </div>

@@ -129,6 +129,14 @@ function circle(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.
 function clamp(v,a,b){return v<a?a:v>b?b:v;}
 function aabb(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 
+// optional generated background image (cover-fit), else flat palette bg
+let bgImg=null,bgReady=false;
+if(C.background){bgImg=new Image();bgImg.onload=()=>{bgReady=true;};bgImg.src=C.background;}
+function paintBg(){
+  if(bgReady){const r=Math.max(W/bgImg.width,H/bgImg.height);const w=bgImg.width*r,h=bgImg.height*r;ctx.drawImage(bgImg,(W-w)/2,(H-h)/2,w,h);}
+  else{ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);}
+}
+
 // ======================= BLUEPRINTS =======================
 function makePlatformer(){
   let plr,plat,coins,goal,vy,onGround;
@@ -213,7 +221,7 @@ function makeTopdown(){
     if(orbs.length===0)win('All orbs collected!');
   }
   function draw(){
-    ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
+    paintBg();
     for(let x=0;x<W;x+=44){for(let y=0;y<H;y+=44)rect(x,y,42,42,(x+y)%88?P.secondary+'18':P.secondary+'28');}
     orbs.forEach(o=>circle(o.x+8,o.y+8,8,P.accent));
     foes.forEach(f=>{rect(f.x,f.y,f.w,f.h,P.primary);});
@@ -266,7 +274,7 @@ function makeRacer(){
     if(a<1.0)car.gate=false;
   }
   function draw(){
-    ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);
+    paintBg();
     ctx.lineWidth=track.rx*0.9;ctx.strokeStyle=P.secondary;ctx.beginPath();ctx.ellipse(track.cx,track.cy,track.rx,track.ry,0,0,7);ctx.stroke();
     ctx.lineWidth=4;ctx.setLineDash([14,14]);ctx.strokeStyle=P.text+'66';ctx.beginPath();ctx.ellipse(track.cx,track.cy,track.rx,track.ry,0,0,7);ctx.stroke();ctx.setLineDash([]);
     ctx.save();ctx.translate(car.x,car.y);ctx.rotate(ang);rect(-14,-9,28,18,P.primary);rect(6,-9,8,18,P.accent);ctx.restore();
@@ -328,8 +336,8 @@ else ovBtn.onclick=()=>{setScore(0);start();};
 function loop(){
   if(state==='play'){game.update();}
   ctx.clearRect(0,0,W,H);
+  paintBg();
   if(state!=='menu'||game.isStory){game.draw();}
-  else{ctx.fillStyle=P.bg;ctx.fillRect(0,0,W,H);}
   requestAnimationFrame(loop);
 }
 loop();
